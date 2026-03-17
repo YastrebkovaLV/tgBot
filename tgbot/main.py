@@ -12,83 +12,121 @@ from telegram.ext import (
     filters,
 )
 
-# 🔐 Загружаем переменные из .env
+# 🔐 Загружаем токен
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Состояние ожидания кода
-WAITING_FOR_CODE = False
 
-
-# 👋 Команда /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# 🏠 Главное меню
+async def main_menu(message):
     keyboard = [
-        [InlineKeyboardButton("🧪 Проверить код", callback_data="check_code")],
-        [InlineKeyboardButton("💡 Рекомендации", callback_data="recommend")],
+        [InlineKeyboardButton("🧪 Проверить Python-код", callback_data="check_code")],
+        [InlineKeyboardButton("💡 Советы по коду", callback_data="recommend")],
+        [InlineKeyboardButton("ℹ️ О боте", callback_data="about")],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        "👋 Привет!\n\n"
-        "Я бот для проверки реального Python-кода.\n"
-        "Выберите действие:",
+    await message.reply_text(
+        "🤖 <b>Добро пожаловать!</b>\n\n"
+        "Я бот для проверки Python-кода 🐍\n"
+        "Выберите действие ниже 👇",
         reply_markup=reply_markup,
+        parse_mode="HTML",
     )
+
+
+# 👋 Команда /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["waiting_for_code"] = False
+    await main_menu(update.message)
 
 
 # 🔘 Обработка кнопок
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global WAITING_FOR_CODE
-
     query = update.callback_query
     await query.answer()
 
+    # 🧪 Проверка кода
     if query.data == "check_code":
-        WAITING_FOR_CODE = True
+        context.user_data["waiting_for_code"] = True
+
+        keyboard = [
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
+        ]
+
         await query.message.reply_text(
-            "✏️ Отправьте Python-код.\n"
-            "Я выполню его и проверю на ошибки."
+            "✏️ <b>Отправьте Python-код</b>\n\n"
+            "Я выполню его и покажу результат.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="HTML",
         )
 
+    # 💡 Советы
     elif query.data == "recommend":
+        keyboard = [
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
+        ]
+
         await query.message.reply_text(
-            "💡 Рекомендации:\n"
-            "- Проверяйте отступы\n"
-            "- Не используйте опасные операции\n"
-            "- Код должен быть корректным Python\n"
-            "- Используйте print() для вывода результата"
+            "💡 <b>Полезные советы:</b>\n\n"
+            "• Проверяйте отступы\n"
+            "• Используйте print() для вывода\n"
+            "• Не используйте опасные операции\n"
+            "• Пишите чистый и читаемый код\n",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="HTML",
         )
 
+    # ℹ️ О боте
+    elif query.data == "about":
+        keyboard = [
+            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
+        ]
 
-# 🧠 Проверка реального Python-кода
+        await query.message.reply_text(
+            "ℹ️ <b>О боте</b>\n\n"
+            "Этот бот выполняет Python-код и проверяет его на ошибки.\n"
+            "Создан для обучения и тестирования 🐍",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="HTML",
+        )
+
+    # 🔙 Назад
+    elif query.data == "back":
+        context.user_data["waiting_for_code"] = False
+        await main_menu(query.message)
+
+
+# 🧠 Проверка кода
 async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global WAITING_FOR_CODE
-
-    if not WAITING_FOR_CODE:
+    if not context.user_data.get("waiting_for_code"):
         return
 
-    WAITING_FOR_CODE = False
+    context.user_data["waiting_for_code"] = False
     user_code = update.message.text
 
     try:
-        # Создаем безопасное пространство выполнения
+        # Безопасная среда выполнения
         local_vars = {}
-
-        # Выполняем код
         exec(user_code, {"__builtins__": {}}, local_vars)
 
-        await update.message.reply_text("✅ Код выполнен успешно! Ошибок нет.")
+        await update.message.reply_text(
+            "✅ <b>Код выполнен успешно!</b>\nОшибок не найдено.",
+            parse_mode="HTML",
+        )
 
     except Exception:
         error_message = traceback.format_exc()
 
         await update.message.reply_text(
-            "❌ В коде есть ошибка:\n\n"
-            f"{error_message}"
+            "❌ <b>Ошибка в коде:</b>\n\n"
+            f"<code>{error_message}</code>",
+            parse_mode="HTML",
         )
 
 
+# 🚀 Запуск бота
 def main():
     if not TOKEN:
         print("❌ Токен не найден в .env файле")
