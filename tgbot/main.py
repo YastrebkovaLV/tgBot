@@ -1,144 +1,228 @@
 import os
-import traceback
+import random
+import asyncio
 from dotenv import load_dotenv
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
-    MessageHandler,
     CallbackQueryHandler,
     ContextTypes,
-    filters,
 )
 
-# 🔐 Загружаем токен
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
+users = {}
 
-# 🏠 Главное меню
-async def main_menu(message):
+def get_user(user_id):
+    if user_id not in users:
+        users[user_id] = {
+            "balance": 100,
+            "level": 1,
+            "xp": 0,
+            "games": 0,
+            "wins": 0,
+            "losses": 0,
+        }
+    return users[user_id]
+
+def update_level(user):
+    if user["xp"] >= 100:
+        user["level"] += 1
+        user["xp"] = 0
+
+
+
+async def show_menu(message, user):
     keyboard = [
-        [InlineKeyboardButton("🧪 Проверить Python-код", callback_data="check_code")],
-        [InlineKeyboardButton("💡 Советы по коду", callback_data="recommend")],
-        [InlineKeyboardButton("ℹ️ О боте", callback_data="about")],
+        [InlineKeyboardButton("🎰 Слот", callback_data="slot")],
+        [InlineKeyboardButton("🎲 Кубик", callback_data="dice")],
+        [InlineKeyboardButton("🪙 Монетка", callback_data="coin")],
+        [InlineKeyboardButton("📊 Статистика", callback_data="stats")],
     ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = "🎰 <b>CASINO ULTRA</b>\n\nВыберите игру 👇"
 
-    await message.reply_text(
-        "🤖 <b>Добро пожаловать!</b>\n\n"
-        "Я бот для проверки Python-кода 🐍\n"
-        "Выберите действие ниже 👇",
-        reply_markup=reply_markup,
+    await message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML",
     )
 
 
-# 👋 Команда /start
+def back_keyboard():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Назад", callback_data="back")]
+    ])
+
+
+async def win_animation(message, final_text):
+    for _ in range(4):
+        await message.edit_text("✨")
+        await asyncio.sleep(0.2)
+        await message.edit_text("🎉")
+        await asyncio.sleep(0.2)
+
+    await message.edit_text(final_text, reply_markup=back_keyboard())
+
+
+async def smooth_slot(message):
+    symbols = ["🍒", "🍋", "🍉", "⭐", "🔔", "💎"]
+
+    reels = ["❓", "❓", "❓"]
+
+    for i in range(15):
+        reels[0] = random.choice(symbols)
+        if i > 3:
+            reels[1] = random.choice(symbols)
+        if i > 7:
+            reels[2] = random.choice(symbols)
+
+        await message.edit_text(f"🎰 {' | '.join(reels)}")
+        await asyncio.sleep(0.15)
+
+    final = [random.choice(symbols) for _ in range(3)]
+    return final
+
+
+async def dice_animation(message):
+    dice_msg = await message.reply_dice(emoji="🎲")
+    await asyncio.sleep(3)
+    return dice_msg.dice.value
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["waiting_for_code"] = False
-    await main_menu(update.message)
+    user = get_user(update.effective_user.id)
 
+    message = await update.message.reply_text("🎰 Загрузка...")
+    await show_menu(message, user)
 
-# 🔘 Обработка кнопок
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # 🧪 Проверка кода
-    if query.data == "check_code":
-        context.user_data["waiting_for_code"] = True
+    user = get_user(query.from_user.id)
 
-        keyboard = [
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
-        ]
+    # 🔙 BACK
+    if query.data == "back":
+        await show_menu(query.message, user)
 
-        await query.message.reply_text(
-            "✏️ <b>Отправьте Python-код</b>\n\n"
-            "Я выполню его и покажу результат.",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="HTML",
+    # 📊 STATS
+    elif query.data == "stats":
+        games = user["games"]
+        wins = user["wins"]
+        losses = user["losses"]
+        winrate = round((wins / games) * 100, 1) if games > 0 else 0
+
+        text = (
+            "📊 <b>СТАТИСТИКА</b>\n\n"
+            f"🎮 Игр: <b>{games}</b>\n"
+            f"🏆 Побед: <b>{wins}</b>\n"
+            f"❌ Поражений: <b>{losses}</b>\n"
+            f"📈 Winrate: <b>{winrate}%</b>"
         )
 
-    # 💡 Советы
-    elif query.data == "recommend":
-        keyboard = [
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
-        ]
+        await query.message.edit_text(text, reply_markup=back_keyboard(), parse_mode="HTML")
 
-        await query.message.reply_text(
-            "💡 <b>Полезные советы:</b>\n\n"
-            "• Проверяйте отступы\n"
-            "• Используйте print() для вывода\n"
-            "• Не используйте опасные операции\n"
-            "• Пишите чистый и читаемый код\n",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="HTML",
-        )
+    elif query.data == "slot":
+        bet = 20
+        if user["balance"] < bet:
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            return
 
-    # ℹ️ О боте
-    elif query.data == "about":
-        keyboard = [
-            [InlineKeyboardButton("⬅️ Назад", callback_data="back")]
-        ]
+        user["games"] += 1
 
-        await query.message.reply_text(
-            "ℹ️ <b>О боте</b>\n\n"
-            "Этот бот выполняет Python-код и проверяет его на ошибки.\n"
-            "Создан для обучения и тестирования 🐍",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="HTML",
-        )
+        result = await smooth_slot(query.message)
 
-    # 🔙 Назад
-    elif query.data == "back":
-        context.user_data["waiting_for_code"] = False
-        await main_menu(query.message)
+        if result[0] == result[1] == result[2]:
+            win = bet * 5
+            user["balance"] += win
+            user["xp"] += 30
+            user["wins"] += 1
+            update_level(user)
+
+            await win_animation(
+                query.message,
+                f"🎰 {' | '.join(result)}\n\n🏆 ДЖЕКПОТ +{win}"
+            )
+        else:
+            user["balance"] -= bet
+            user["losses"] += 1
+
+            await query.message.edit_text(
+                f"🎰 {' | '.join(result)}\n\n😢 -{bet}",
+                reply_markup=back_keyboard()
+            )
+
+    elif query.data == "dice":
+        bet = 10
+        if user["balance"] < bet:
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            return
+
+        user["games"] += 1
+
+        value = await dice_animation(query.message)
+
+        if value >= 4:
+            user["balance"] += bet
+            user["xp"] += 20
+            user["wins"] += 1
+            update_level(user)
+
+            await win_animation(
+                query.message,
+                f"🎲 Выпало {value}\n🎉 Победа +{bet}"
+            )
+        else:
+            user["balance"] -= bet
+            user["losses"] += 1
+
+            await query.message.edit_text(
+                f"🎲 Выпало {value}\n😢 Проигрыш -{bet}",
+                reply_markup=back_keyboard()
+            )
+
+    # 🪙 COIN
+    elif query.data == "coin":
+        bet = 5
+        if user["balance"] < bet:
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            return
+
+        user["games"] += 1
+
+        result = random.choice(["win", "lose"])
+
+        if result == "win":
+            user["balance"] += bet
+            user["xp"] += 10
+            user["wins"] += 1
+            update_level(user)
+
+            await win_animation(query.message, "🪙 ОРЁЛ!\n🎉 Победа!")
+        else:
+            user["balance"] -= bet
+            user["losses"] += 1
+
+            await query.message.edit_text(
+                "🪙 РЕШКА!\n😢 Поражение",
+                reply_markup=back_keyboard()
+            )
 
 
-# 🧠 Проверка кода
-async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.user_data.get("waiting_for_code"):
-        return
-
-    context.user_data["waiting_for_code"] = False
-    user_code = update.message.text
-
-    try:
-        # Безопасная среда выполнения
-        local_vars = {}
-        exec(user_code, {"__builtins__": {}}, local_vars)
-
-        await update.message.reply_text(
-            "✅ <b>Код выполнен успешно!</b>\nОшибок не найдено.",
-            parse_mode="HTML",
-        )
-
-    except Exception:
-        error_message = traceback.format_exc()
-
-        await update.message.reply_text(
-            "❌ <b>Ошибка в коде:</b>\n\n"
-            f"<code>{error_message}</code>",
-            parse_mode="HTML",
-        )
-
-
-# 🚀 Запуск бота
 def main():
     if not TOKEN:
-        print("❌ Токен не найден в .env файле")
+        print("❌ BOT_TOKEN не найден")
         return
 
     app = ApplicationBuilder().token(TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_code))
 
-    print("🤖 Бот запущен...")
+    print("🎰 Казино запущено...")
     app.run_polling()
 
 
