@@ -25,55 +25,45 @@ def get_user(user_id):
             "games": 0,
             "wins": 0,
             "losses": 0,
+            "active": False
         }
     return users[user_id]
+
+def reset_user_state(user):
+    user["active"] = False
 
 def update_level(user):
     if user["xp"] >= 100:
         user["level"] += 1
         user["xp"] = 0
 
-
-
-async def show_menu(message, user):
-    keyboard = [
+def main_keyboard():
+    return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎰 Слот", callback_data="slot")],
         [InlineKeyboardButton("🎲 Кубик", callback_data="dice")],
         [InlineKeyboardButton("🪙 Монетка", callback_data="coin")],
         [InlineKeyboardButton("📊 Статистика", callback_data="stats")],
-    ]
-
-    text = "🎰 <b>CASINO ULTRA</b>\n\nВыберите игру 👇"
-
-    await message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="HTML",
-    )
-
-
-def back_keyboard():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Назад", callback_data="back")]
+        [InlineKeyboardButton("🔄 ПЕРЕЗАПУСК", callback_data="restart")],
     ])
 
+async def show_menu(message, user):
+    reset_user_state(user)
+    text = "🎰 <b>CASINO ULTRA</b>\n\nВыберите игру 👇"
+    await message.edit_text(text, reply_markup=main_keyboard(), parse_mode="HTML")
 
-async def win_animation(message, final_text):
-    for _ in range(4):
+async def win_animation(message, text):
+    for _ in range(3):
         await message.edit_text("✨")
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.15)
         await message.edit_text("🎉")
-        await asyncio.sleep(0.2)
-
-    await message.edit_text(final_text, reply_markup=back_keyboard())
-
+        await asyncio.sleep(0.15)
+    await message.edit_text(text, reply_markup=main_keyboard())
 
 async def smooth_slot(message):
     symbols = ["🍒", "🍋", "🍉", "⭐", "🔔", "💎"]
-
     reels = ["❓", "❓", "❓"]
 
-    for i in range(15):
+    for i in range(12):
         reels[0] = random.choice(symbols)
         if i > 3:
             reels[1] = random.choice(symbols)
@@ -81,21 +71,30 @@ async def smooth_slot(message):
             reels[2] = random.choice(symbols)
 
         await message.edit_text(f"🎰 {' | '.join(reels)}")
-        await asyncio.sleep(0.15)
+        await asyncio.sleep(0.1)
 
-    final = [random.choice(symbols) for _ in range(3)]
-    return final
-
+    return [random.choice(symbols) for _ in range(3)]
 
 async def dice_animation(message):
     dice_msg = await message.reply_dice(emoji="🎲")
     await asyncio.sleep(3)
-    return dice_msg.dice.value
+    value = dice_msg.dice.value
+    try:
+        await dice_msg.delete()
+    except:
+        pass
+    return value
 
+async def coin_animation(message):
+    frames = ["🪙 Бросаем...", "🪙 Крутим...", "🪙 Почти..."]
+    for frame in frames:
+        await message.edit_text(frame)
+        await asyncio.sleep(0.4)
+
+    return random.choice(["Орёл", "Решка"])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
-
     message = await update.message.reply_text("🎰 Загрузка...")
     await show_menu(message, user)
 
@@ -105,12 +104,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(query.from_user.id)
 
-    # 🔙 BACK
-    if query.data == "back":
-        await show_menu(query.message, user)
+    if query.data == "restart":
+        reset_user_state(user)
+        await query.message.edit_text(
+            "🔄 <b>Бот перезапущен</b>\n\nГотов к работе.",
+            reply_markup=main_keyboard(),
+            parse_mode="HTML"
+        )
+        return
 
-    # 📊 STATS
-    elif query.data == "stats":
+    if query.data == "stats":
         games = user["games"]
         wins = user["wins"]
         losses = user["losses"]
@@ -124,16 +127,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📈 Winrate: <b>{winrate}%</b>"
         )
 
-        await query.message.edit_text(text, reply_markup=back_keyboard(), parse_mode="HTML")
+        await query.message.edit_text(text, reply_markup=main_keyboard(), parse_mode="HTML")
+        return
 
-    elif query.data == "slot":
+    if user["active"]:
+        return
+
+    user["active"] = True
+
+    if query.data == "slot":
         bet = 20
         if user["balance"] < bet:
-            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=main_keyboard())
+            reset_user_state(user)
             return
 
         user["games"] += 1
-
         result = await smooth_slot(query.message)
 
         if result[0] == result[1] == result[2]:
@@ -143,27 +152,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user["wins"] += 1
             update_level(user)
 
-            await win_animation(
-                query.message,
-                f"🎰 {' | '.join(result)}\n\n🏆 ДЖЕКПОТ +{win}"
-            )
+            await win_animation(query.message, f"🎰 {' | '.join(result)}\n\n🏆 +{win}")
         else:
             user["balance"] -= bet
             user["losses"] += 1
-
             await query.message.edit_text(
                 f"🎰 {' | '.join(result)}\n\n😢 -{bet}",
-                reply_markup=back_keyboard()
+                reply_markup=main_keyboard()
             )
 
     elif query.data == "dice":
         bet = 10
         if user["balance"] < bet:
-            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=main_keyboard())
+            reset_user_state(user)
             return
 
         user["games"] += 1
-
         value = await dice_animation(query.message)
 
         if value >= 4:
@@ -172,46 +177,40 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user["wins"] += 1
             update_level(user)
 
-            await win_animation(
-                query.message,
-                f"🎲 Выпало {value}\n🎉 Победа +{bet}"
-            )
+            await win_animation(query.message, f"🎲 {value}\n🎉 +{bet}")
         else:
             user["balance"] -= bet
             user["losses"] += 1
-
             await query.message.edit_text(
-                f"🎲 Выпало {value}\n😢 Проигрыш -{bet}",
-                reply_markup=back_keyboard()
+                f"🎲 {value}\n😢 -{bet}",
+                reply_markup=main_keyboard()
             )
 
-    # 🪙 COIN
     elif query.data == "coin":
         bet = 5
         if user["balance"] < bet:
-            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=back_keyboard())
+            await query.message.edit_text("❌ Недостаточно монет!", reply_markup=main_keyboard())
+            reset_user_state(user)
             return
 
         user["games"] += 1
+        result = await coin_animation(query.message)
 
-        result = random.choice(["win", "lose"])
-
-        if result == "win":
+        if result == "Орёл":
             user["balance"] += bet
             user["xp"] += 10
             user["wins"] += 1
             update_level(user)
-
             await win_animation(query.message, "🪙 ОРЁЛ!\n🎉 Победа!")
         else:
             user["balance"] -= bet
             user["losses"] += 1
-
             await query.message.edit_text(
                 "🪙 РЕШКА!\n😢 Поражение",
-                reply_markup=back_keyboard()
+                reply_markup=main_keyboard()
             )
 
+    reset_user_state(user)
 
 def main():
     if not TOKEN:
@@ -224,7 +223,6 @@ def main():
 
     print("🎰 Казино запущено...")
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
