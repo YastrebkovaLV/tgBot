@@ -1,120 +1,108 @@
 import os
-import asyncio
-import subprocess
-import tempfile
-import logging
+import traceback
 from dotenv import load_dotenv
 
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application,
+    ApplicationBuilder,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     ContextTypes,
-    filters
+    filters,
 )
-from telegram.error import Conflict
 
+# 🔐 Загружаем переменные из .env
 load_dotenv()
+TOKEN = os.getenv("BOT_TOKEN")
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+# Состояние ожидания кода
+WAITING_FOR_CODE = False
 
-if not BOT_TOKEN:
-    raise ValueError("❌ BOT_TOKEN не найден. Проверь файл .env")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+# 👋 Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("🧪 Проверить код", callback_data="check_code")],
+        [InlineKeyboardButton("💡 Рекомендации", callback_data="recommend")],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        "🤖 Отправь Python код так:\n\n"
-        "#python\n"
-        "print('Hello')"
+        "👋 Привет!\n\n"
+        "Я бот для проверки реального Python-кода.\n"
+        "Выберите действие:",
+        reply_markup=reply_markup,
     )
 
 
-def extract_code(text: str):
-    if text.startswith("#python"):
-        return text.replace("#python", "", 1).strip()
-    return None
+# 🔘 Обработка кнопок
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global WAITING_FOR_CODE
 
+    query = update.callback_query
+    await query.answer()
 
-async def check_code(update: Update, code: str):
-    msg = await update.message.reply_text("⏳ Проверяю код...")
-
-    temp_file = None
-
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".py",
-            delete=False,
-            encoding="utf-8"
-        ) as f:
-            f.write(code)
-            temp_file = f.name
-
-        result = subprocess.run(
-            ["pylint", temp_file],
-            capture_output=True,
-            text=True,
-            timeout=10
+    if query.data == "check_code":
+        WAITING_FOR_CODE = True
+        await query.message.reply_text(
+            "✏️ Отправьте Python-код.\n"
+            "Я выполню его и проверю на ошибки."
         )
 
-        if result.returncode == 0:
-            text = "✅ Ошибок не найдено"
-        else:
-            output = result.stdout or result.stderr
-            text = f"❌ Ошибки:\n<code>{output[:3500]}</code>"
-
-    except Exception as e:
-        text = f"⚠️ Ошибка: {str(e)}"
-
-    finally:
-        if temp_file and os.path.exists(temp_file):
-            os.remove(temp_file)
-
-    await msg.edit_text(text, parse_mode="HTML")
+    elif query.data == "recommend":
+        await query.message.reply_text(
+            "💡 Рекомендации:\n"
+            "- Проверяйте отступы\n"
+            "- Не используйте опасные операции\n"
+            "- Код должен быть корректным Python\n"
+            "- Используйте print() для вывода результата"
+        )
 
 
-async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
+# 🧠 Проверка реального Python-кода
+async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global WAITING_FOR_CODE
+
+    if not WAITING_FOR_CODE:
         return
 
-    code = extract_code(update.message.text)
+    WAITING_FOR_CODE = False
+    user_code = update.message.text
 
-    if not code:
-        await update.message.reply_text("❌ Напиши код с #python в начале")
-        return
+    try:
+        # Создаем безопасное пространство выполнения
+        local_vars = {}
 
-    await check_code(update, code)
+        # Выполняем код
+        exec(user_code, {"__builtins__": {}}, local_vars)
 
+        await update.message.reply_text("✅ Код выполнен успешно! Ошибок нет.")
 
-async def error_handler(update, context):
-    if isinstance(context.error, Conflict):
-        logging.warning("⚠️ Conflict — сбрасываю webhook...")
-        try:
-            await context.bot.delete_webhook(drop_pending_updates=True)
-        except Exception as e:
-            logging.error(f"Webhook error: {e}")
-    else:
-        logging.error("Ошибка:", exc_info=context.error)
+    except Exception:
+        error_message = traceback.format_exc()
+
+        await update.message.reply_text(
+            "❌ В коде есть ошибка:\n\n"
+            f"{error_message}"
+        )
 
 
 def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+    if not TOKEN:
+        print("❌ Токен не найден в .env файле")
+        return
+
+    app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    app.add_error_handler(error_handler)
+    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_code))
 
-    print("🚀 Бот запущен")
-
-    app.run_polling(drop_pending_updates=True)
+    print("🤖 Бот запущен...")
+    app.run_polling()
 
 
 if __name__ == "__main__":
-
     main()
