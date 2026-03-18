@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="бот казино 2 (бд,более приятный функционал)">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tgbot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tgbot/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -153,7 +152,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773818073324</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="бот казино 2 (бд,более приятный функционал)">
+      <option name="closed" value="true" />
+      <created>1773819004469</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1773819004469</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
