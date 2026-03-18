@@ -1,6 +1,9 @@
 import sqlite3
 
 conn = sqlite3.connect("casino.db", check_same_thread=False)
+conn.execute("PRAGMA journal_mode=WAL;")
+conn.execute("PRAGMA synchronous=NORMAL;")
+conn.execute("PRAGMA temp_store=MEMORY;")
 cursor = conn.cursor()
 
 # ускорение

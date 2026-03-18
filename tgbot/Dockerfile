@@ -1,22 +1,15 @@
-FROM ubuntu:latest
-LABEL authors="liliaastrebkova"
+FROM python:3.11
 
-ENTRYPOINT ["top", "-b"]
-
-# Базовый образ Python
-FROM python:3.11-slim
-
-# Рабочая директория
 WORKDIR /app
 
-# Копируем только requirements сначала (для кеша)
-COPY requirements.txt .
+RUN apt-get update && apt-get install -y \
+    libfreetype6-dev \
+    libpng-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь проект
 COPY . .
 
-# Запуск бота
 CMD ["python", "bot.py"]
