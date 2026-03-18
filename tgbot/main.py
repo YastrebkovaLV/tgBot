@@ -3,6 +3,7 @@ import random
 import asyncio
 import sqlite3
 import io
+import logging
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
@@ -16,14 +17,29 @@ from telegram.ext import (
     filters,
 )
 
-# ================== CONFIG ==================
+# ================== LOAD ENV ==================
 
 load_dotenv()
+
 TOKEN = os.getenv("BOT_TOKEN")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "casino.db")
+
+# ================== LOGGING ==================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    handlers=[
+        logging.FileHandler("bot.log"),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 # ================== DATABASE ==================
 
-conn = sqlite3.connect("casino.db", check_same_thread=False)
+conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
 def init_db():
@@ -40,21 +56,26 @@ def init_db():
     )
     """)
     conn.commit()
+    logger.info("База данных инициализирована")
 
 def user_exists(user_id):
     cursor.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,))
     return cursor.fetchone() is not None
 
 def create_user(user_id, username):
-    cursor.execute("INSERT INTO users (user_id, username) VALUES (?, ?)",
-                   (user_id, username))
+    cursor.execute("""
+    INSERT OR IGNORE INTO users (user_id, username)
+    VALUES (?, ?)
+    """, (user_id, username))
     conn.commit()
+    logger.info(f"Создан пользователь {username} ({user_id})")
 
 def get_user(user_id):
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     row = cursor.fetchone()
     if not row:
         return None
+
     return {
         "user_id": row[0],
         "username": row[1],
@@ -84,14 +105,13 @@ def update_user(user):
     ))
     conn.commit()
 
-# ================== KEYBOARD ==================
+# ================== KEYBOARDS ==================
 
 def main_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎮 Игры", callback_data="games")],
         [InlineKeyboardButton("👤 Профиль", callback_data="profile")],
         [InlineKeyboardButton("📊 График", callback_data="graph")],
-        [InlineKeyboardButton("🔄 Перезапуск", callback_data="restart")],
     ])
 
 def games_keyboard():
@@ -105,8 +125,8 @@ def games_keyboard():
 # ================== GRAPH ==================
 
 def create_graph(wins, losses):
-    plt.style.use("dark_background")
 
+    plt.style.use("dark_background")
     fig, ax = plt.subplots(figsize=(6,4))
 
     bars = ax.bar(
@@ -115,7 +135,7 @@ def create_graph(wins, losses):
         color=["#00ff88", "#ff4d4d"]
     )
 
-    ax.set_title("📊 Статистика игрока")
+    ax.set_title("Статистика игрока")
     ax.set_ylabel("Количество")
 
     for bar in bars:
@@ -131,6 +151,7 @@ def create_graph(wins, losses):
     plt.savefig(buffer, format="png")
     buffer.seek(0)
     plt.close()
+
     return buffer
 
 # ================== START ==================
@@ -140,6 +161,9 @@ registering_users = set()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_user.id
+    username = update.effective_user.username or "NoName"
+
+    logger.info(f"/start от {user_id}")
 
     if not user_exists(user_id):
         registering_users.add(user_id)
@@ -199,17 +223,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         user = get_user(user_id)
 
-        # ===== MENU =====
-        if query.data == "games":
-            await query.message.edit_text(
-                "🎮 Выберите игру:",
-                reply_markup=games_keyboard()
-            )
-
-        elif query.data == "back":
+        if query.data == "back":
             await query.message.edit_text(
                 "🎰 Главное меню",
                 reply_markup=main_keyboard()
+            )
+
+        elif query.data == "games":
+            await query.message.edit_text(
+                "🎮 Выберите игру:",
+                reply_markup=games_keyboard()
             )
 
         elif query.data == "profile":
@@ -217,7 +240,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             winrate = round((user["wins"]/user["games"])*100,1) if user["games"] else 0
 
             text = f"""
-👤 <b>ПРОФИЛЬ</b>
+👤 ПРОФИЛЬ
 
 🎮 Ник: {user['username']}
 💰 Баланс: {user['balance']}
@@ -231,7 +254,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await query.message.edit_text(
                 text,
-                parse_mode="HTML",
                 reply_markup=main_keyboard()
             )
 
@@ -266,68 +288,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 win = bet * 5
                 user["balance"] += win
                 user["wins"] += 1
-                text = f"🎰 {' | '.join(result)}\n\n🏆 ВЫИГРЫШ +{win}"
+                text = f"🎰 {' | '.join(result)}\n🏆 +{win}"
             else:
                 user["losses"] += 1
-                text = f"🎰 {' | '.join(result)}\n\n❌ ПРОИГРАЛ -{bet}"
-
-            await query.message.edit_text(text, reply_markup=main_keyboard())
-
-        # ===== DICE =====
-        elif query.data == "dice":
-
-            bet = 10
-
-            if user["balance"] < bet:
-                await query.message.edit_text("❌ Недостаточно средств", reply_markup=main_keyboard())
-                return
-
-            user["games"] += 1
-            user["balance"] -= bet
-
-            value = random.randint(1,6)
-
-            await asyncio.sleep(0.5)
-
-            if value >= 4:
-                win = bet * 2
-                user["balance"] += win
-                user["wins"] += 1
-                text = f"🎲 {value}\n\n🏆 ВЫИГРЫШ +{win}"
-            else:
-                user["losses"] += 1
-                text = f"🎲 {value}\n\n❌ ПРОИГРАЛ -{bet}"
-
-            await query.message.edit_text(text, reply_markup=main_keyboard())
-
-        # ===== COIN =====
-        elif query.data == "coin":
-
-            bet = 5
-
-            if user["balance"] < bet:
-                await query.message.edit_text("❌ Недостаточно средств", reply_markup=main_keyboard())
-                return
-
-            user["games"] += 1
-            user["balance"] -= bet
-
-            result = random.choice(["Орёл","Решка"])
-
-            await asyncio.sleep(0.5)
-
-            if result == "Орёл":
-                win = bet * 2
-                user["balance"] += win
-                user["wins"] += 1
-                text = f"🪙 {result}\n\n🏆 ВЫИГРЫШ +{win}"
-            else:
-                user["losses"] += 1
-                text = f"🪙 {result}\n\n❌ ПРОИГРАЛ -{bet}"
+                text = f"🎰 {' | '.join(result)}\n❌ -{bet}"
 
             await query.message.edit_text(text, reply_markup=main_keyboard())
 
         update_user(user)
+
+    except Exception as e:
+        logger.exception("Ошибка в обработке кнопки")
 
     finally:
         processing_users.discard(user_id)
@@ -337,7 +308,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
 
     if not TOKEN:
-        print("❌ BOT_TOKEN не найден")
+        logger.error("BOT_TOKEN не найден в .env")
         return
 
     init_db()
@@ -348,8 +319,8 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🚀 Казино полностью работает")
-    app.run_polling()
+    logger.info("🚀 Бот запущен")
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()

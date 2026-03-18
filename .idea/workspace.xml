@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="бот казино 1.6 (у меня все сломалось)">
+    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="бот казино 2 (бд,более приятный функционал)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tgbot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/main.py" afterDir="false" />
     </list>
@@ -145,7 +145,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773746613457</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="бот казино 2 (бд,более приятный функционал)">
+      <option name="closed" value="true" />
+      <created>1773818073323</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1773818073324</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -181,6 +189,7 @@
     <MESSAGE value="бот казино" />
     <MESSAGE value="бот казино 1.5 (перезапуск изменен,поменьше лагов)" />
     <MESSAGE value="бот казино 1.6 (у меня все сломалось)" />
-    <option name="LAST_COMMIT_MESSAGE" value="бот казино 1.6 (у меня все сломалось)" />
+    <MESSAGE value="бот казино 2 (бд,более приятный функционал)" />
+    <option name="LAST_COMMIT_MESSAGE" value="бот казино 2 (бд,более приятный функционал)" />
   </component>
 </project>
