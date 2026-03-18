@@ -1,1 +1,4 @@
 .env
+casino.db
+bot.log
+.venv
