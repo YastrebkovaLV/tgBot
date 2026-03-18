@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="Bot ver 1.5">
+    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="бот казино 1.6 (у меня все сломалось)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tgbot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/main.py" afterDir="false" />
     </list>
@@ -13,6 +13,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="HTML File" />
         <option value="Python Script" />
       </list>
     </option>
@@ -20,36 +21,38 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "YastrebkovaLV"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;YastrebkovaLV&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com:YastrebkovaLV/tgBot.git",
-    "accountId": "409b480b-faf0-42b8-9f86-c75bd03fb1b3"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:YastrebkovaLV/tgBot.git&quot;,
+    &quot;accountId&quot;: &quot;409b480b-faf0-42b8-9f86-c75bd03fb1b3&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="3B491PWorPL9q20f7k01wN7t8fd" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.main.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.db.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/tgbot" />
@@ -118,7 +121,31 @@
       <option name="project" value="LOCAL" />
       <updated>1773741278264</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="бот казино">
+      <option name="closed" value="true" />
+      <created>1773745409465</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1773745409465</updated>
+    </task>
+    <task id="LOCAL-00008" summary="бот казино 1.5 (перезапуск изменен,поменьше лагов)">
+      <option name="closed" value="true" />
+      <created>1773746111551</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1773746111551</updated>
+    </task>
+    <task id="LOCAL-00009" summary="бот казино 1.6 (у меня все сломалось)">
+      <option name="closed" value="true" />
+      <created>1773746613457</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1773746613457</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -151,6 +178,9 @@
     <MESSAGE value="Bot ver 1.2" />
     <MESSAGE value="Bot ver 1.3" />
     <MESSAGE value="Bot ver 1.5" />
-    <option name="LAST_COMMIT_MESSAGE" value="Bot ver 1.5" />
+    <MESSAGE value="бот казино" />
+    <MESSAGE value="бот казино 1.5 (перезапуск изменен,поменьше лагов)" />
+    <MESSAGE value="бот казино 1.6 (у меня все сломалось)" />
+    <option name="LAST_COMMIT_MESSAGE" value="бот казино 1.6 (у меня все сломалось)" />
   </component>
 </project>
