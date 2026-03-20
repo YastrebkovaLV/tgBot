@@ -12,7 +12,6 @@ from telegram.ext import (
     ContextTypes,
 )
 
-
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
