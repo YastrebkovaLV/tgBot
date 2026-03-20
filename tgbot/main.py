@@ -12,14 +12,11 @@ from telegram.ext import (
     ContextTypes,
 )
 
-# ================== ENV ==================
 
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_PATH = os.getenv("DATABASE_PATH", "casino.db")
-
-# ================== LOGGING ==================
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,8 +24,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-# ================== DATABASE (OPTIMIZED) ==================
 
 conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
 conn.execute("PRAGMA journal_mode=WAL;")
@@ -86,8 +81,6 @@ def update_user(user):
     ))
     conn.commit()
 
-# ================== KEYBOARDS ==================
-
 def main_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🎮 Игры", callback_data="games")],
@@ -102,8 +95,6 @@ def games_keyboard():
         [InlineKeyboardButton("⬅ Назад", callback_data="back")]
     ])
 
-# ================== START ==================
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.effective_user.id
@@ -116,8 +107,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🚀 Казино запущено!",
         reply_markup=main_keyboard()
     )
-
-# ================== BUTTON HANDLER ==================
 
 processing = set()
 
@@ -140,8 +129,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.edit_text("Нажмите /start")
             return
 
-        # ===== MENU =====
-
         if query.data == "games":
             await query.message.edit_text(
                 "Выберите игру:",
@@ -154,8 +141,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_keyboard()
             )
 
-        # ===== PROFILE =====
-
         elif query.data == "profile":
 
             text = (
@@ -167,8 +152,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             await query.message.edit_text(text, reply_markup=main_keyboard())
-
-        # ===== SLOT =====
 
         elif query.data == "slot":
 
@@ -194,8 +177,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await query.message.edit_text(text, reply_markup=main_keyboard())
 
-        # ===== DICE =====
-
         elif query.data == "dice":
 
             bet = 10
@@ -218,8 +199,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text = f"🎲 {value}\n❌ -{bet}"
 
             await query.message.edit_text(text, reply_markup=main_keyboard())
-
-        # ===== COIN =====
 
         elif query.data == "coin":
 
@@ -251,9 +230,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     finally:
         processing.discard(user_id)
-
-# ================== RUN ==================
-
 def main():
 
     if not TOKEN:

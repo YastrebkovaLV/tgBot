@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="бот казино 2.6 (докер)">
+    <list default="true" id="72bd9fce-7479-4ccd-a2ba-0939f62fc2e3" name="Changes" comment="чиичивиирвыуривчты">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tgbot/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tgbot/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tgbot/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tgbot/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tgbot/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -189,7 +185,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773819783381</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="чиичивиирвыуривчты">
+      <option name="closed" value="true" />
+      <created>1773821078729</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1773821078729</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -228,6 +232,7 @@
     <MESSAGE value="бот казино 2 (бд,более приятный функционал)" />
     <MESSAGE value="бот казино 2.5 (прокачка)" />
     <MESSAGE value="бот казино 2.6 (докер)" />
-    <option name="LAST_COMMIT_MESSAGE" value="бот казино 2.6 (докер)" />
+    <MESSAGE value="чиичивиирвыуривчты" />
+    <option name="LAST_COMMIT_MESSAGE" value="чиичивиирвыуривчты" />
   </component>
 </project>
